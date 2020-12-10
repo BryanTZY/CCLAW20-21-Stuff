@@ -17,21 +17,35 @@ def scrape_lawgazette_archive():
 
     soup = BeautifulSoup(archive.text, features="lxml")
     months = dict()
+    month_keys = [] #use only when need to assess specific year / for testing
 
     for a in soup('a', 'issue-block'): #Finds all tags corresponding to a monthly archive
-        months[a.get_text()] = a['href']
-
-    for month_key, month_url in months.items():
-        print(month_key, month_url)
-        scrape_monthly_archive(months, month_key)
+        archive_list_words = a.get_text().split(' ')
+        archive_name = archive_list_words[1] + ' ' + archive_list_words[2]
+        months[archive_name] = a['href']
+        month_keys.append(archive_name)
+    
+    #Now, scrape the articles by month
+    scrape_monthly_archive(months, month_keys[0]) #for testing purposes
+    # for month_key, month_url in months.items():
+    #     print(month_key, month_url)
+    #     scrape_monthly_archive(months, month_key)
 
 def scrape_monthly_archive(months, month_key):
+    print("**Now scraping: ", month_key, "**")
     month_url = months[month_key]
     try:
         month_archive = requests.get(month_url, headers=headers)
     except: 
         print("Unable to excess monthly archive of ", month_key[:15])
-    # print(month_archive.text)
+
+    soup = BeautifulSoup(month_archive.text, features = "lxml")
+    articles = dict()
+
+    for a in soup('a', itemprop='url'):
+        articles[a.get_text()] = a['href']
+    for k, v in articles.items():
+        print(k,v)
     return
 
 scrape_lawgazette_archive()
