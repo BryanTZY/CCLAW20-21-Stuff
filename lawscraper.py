@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 import requests 
-import urllib.request
+import spacy
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -13,7 +13,7 @@ def scrape_lawgazette_archive():
     try:
         archive = requests.get(url, headers= headers)
     except:
-        print("An error occurred.")
+        print("Unable to access archive.")
 
     soup = BeautifulSoup(archive.text, features="lxml")
     months = dict()
@@ -74,9 +74,10 @@ def scrape_article(article_name, article_url):
     for p in result_soup:
         para_list.append(p.get_text())
 
-    for para in para_list:
-        print(para)
-        print()
+    # for para in para_list:
+    #     print(para)
+    #     print()
+
 
     return
 
