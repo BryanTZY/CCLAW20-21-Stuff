@@ -3,6 +3,7 @@ import re
 import json
 import requests 
 import spacy
+import random #for testing purposes
 #note:
 #on wsl, to run - "python3 xxxxx.py" --> must be python3!
 
@@ -28,7 +29,8 @@ def scrape_lawgazette_archive():
         month_keys.append(archive_name)
     
     #Now, scrape the articles by month
-    scrape_monthly_archive(month_keys[0], months[month_keys[0]]) #for testing purposes
+    random_month = random.choice(month_keys)
+    scrape_monthly_archive(random_month, months[random_month]) #for testing purposes
     # for month_key, month_url in months.items():
         # print(month_key, month_url)
         # scrape_monthly_archive(month_key, month_url)
@@ -44,14 +46,14 @@ def scrape_monthly_archive(month_key, month_url):
     soup = BeautifulSoup(month_archive.text, features = "lxml")
     result_list = soup.find_all('h3','a', class_="entry-title mkdf-post-title")
     articles = dict()
-    article_set = set()
 
     for x in result_list:
         article_name = x.get_text().strip()
         if len(article_name) > 7: #arbitrary small value, to remove stray links
             articles[article_name] = x.a['href']
-            article_set.add(article_name)
-    article_list = list(article_set)
+    article_list = [k for k,v in articles.items()]
+    print("Articles found:", article_list)
+
 
     for i in article_list:
         print(i, articles[i])
@@ -85,23 +87,18 @@ def scrape_article(article_name, article_url):
         # print(sentences)
         tokenize(sentences[0]) #sample a sentence in the paragraph for tokenization.
         
-    # print(sentences)
     # print()
-
-
-
     return
 
 def tokenize(para):
     
     nlp = spacy.load('en_core_web_sm')
     doc = nlp(para)
-    print(doc)
-    for token in doc:
-        print(token)
+    print(list(doc))
+    # for token in doc:
+    #     print(token)
     print()
 
-    
     return
 
 scrape_lawgazette_archive()
