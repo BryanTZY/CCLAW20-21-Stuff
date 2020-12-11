@@ -3,6 +3,8 @@ import re
 import json
 import requests 
 import spacy
+#personal note:
+#on wsl, to run - "python3 xxxxx.py" --> must be python3!
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -42,19 +44,20 @@ def scrape_monthly_archive(month_key, month_url):
     soup = BeautifulSoup(month_archive.text, features = "lxml")
     result_list = soup.find_all('h3','a', class_="entry-title mkdf-post-title")
     articles = dict()
-    article_list = []
+    article_set = set()
 
     for x in result_list:
         article_name = x.get_text().strip()
         if len(article_name) > 7: #arbitrary small value, to remove stray links
             articles[article_name] = x.a['href']
-            article_list.append(article_name)
-
-    for article_name, article_url in articles.items():
-        print(article_name + ',', article_url)
+            article_set.add(article_name)
+    article_list = list(article_set)
+    
+    for i in article_list:
+        print(i, articles[i])
     print()
 
-    scrape_article(article_list[10], articles[article_list[10]])
+    scrape_article(article_list[5], articles[article_list[5]]) #test case
 
     return
 
@@ -74,9 +77,9 @@ def scrape_article(article_name, article_url):
     for p in result_soup:
         para_list.append(p.get_text())
 
-    # for para in para_list:
-    #     print(para)
-    #     print()
+    for para in para_list:
+        print(para)
+        print()
 
 
     return
