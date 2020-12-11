@@ -3,7 +3,7 @@ import re
 import json
 import requests 
 import spacy
-#personal note:
+#note:
 #on wsl, to run - "python3 xxxxx.py" --> must be python3!
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
@@ -52,7 +52,7 @@ def scrape_monthly_archive(month_key, month_url):
             articles[article_name] = x.a['href']
             article_set.add(article_name)
     article_list = list(article_set)
-    
+
     for i in article_list:
         print(i, articles[i])
     print()
@@ -78,10 +78,30 @@ def scrape_article(article_name, article_url):
         para_list.append(p.get_text())
 
     for para in para_list:
-        print(para)
-        print()
+        sentences = []
+        # print(para)
+
+        sentences = re.split(r'(?<=\w\.)\s', para) #for each para, make a list of its sentences.
+        # print(sentences)
+        tokenize(sentences[0]) #sample a sentence in the paragraph for tokenization.
+        
+    # print(sentences)
+    # print()
 
 
+
+    return
+
+def tokenize(para):
+    
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(para)
+    print(doc)
+    for token in doc:
+        print(token)
+    print()
+
+    
     return
 
 scrape_lawgazette_archive()
