@@ -6,7 +6,7 @@ import spacy
 import math
 import io
 import random
-from PyPDF2 import PdfFileReader
+import pdfplumber
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -49,7 +49,6 @@ def sup_court_scraper():
     print(random_casename)
     pdf_scraper(case_dict[random_casename], casetext_dict)
 
-
     return
 
 def pdf_scraper(pdf_url_fragment, casetext_dict):
@@ -57,30 +56,33 @@ def pdf_scraper(pdf_url_fragment, casetext_dict):
 
     r = requests.get(root_pdf_url+pdf_url_fragment)
     f = io.BytesIO(r.content)
-    reader = PdfFileReader(f)
 
-    total_pages = reader.getNumPages()
-    print("Total pages:", total_pages)
+    case = pdfplumber.open(f)
+    test_page = case.pages[4]
+    print(test_page.width, test_page.height, '\n')
+    if len(test_page.lines) > 0:
+        line_dict = test_page.lines[0]
+        height_from_bottom = line_dict['y1']
+        cropped = test_page.crop((0, 120, test_page.width, test_page.height - height_from_bottom), relative=True )
+        print(line_dict)
+        print(cropped.extract_text())
+    else:
+        cropped = test_page.crop((0, 120, test_page.width, test_page.height - 120), relative=True)
+        print(cropped.extract_text())
+        print("UNCROPPED - NO CITATIONS")
+    
 
-    contents = reader.getPage(6).extractText()
-
-    substitutions = [[r'(?<=\n\s)[0-9]*', ' '],['\n', ' '], [r"[ﬂﬁ]", '"'], ['™', "'"], ['\t', 'magic'] ] #hardcoded substitutions where pdfreader failed to susbtitute correctly
     #Unresolved sentence issues
     #(1) Judgment numbers (2) ". [emphasis in original]" (3) O. 18 r. 7 (wrong??)
    
-    for x in substitutions:
-        contents = re.sub(x[0], x[1], contents)
-    print(contents, '\n')
+    # print(contents, '\n')
     # contents1 = contents.split('\n')
     # for i in contents1:
     #     print("**"+ i + "**")
     #     print()
 
-    contents2 = re.split(r'(?<=\w\.)\s', contents)
-    for i in contents2: 
-        print(i, '\n')
-    print("Total 'sentences':", len(contents2))
-
+    # contents2 = re.split(r'(?<=\w\.)\s', contents)
+   
 
     return
 
