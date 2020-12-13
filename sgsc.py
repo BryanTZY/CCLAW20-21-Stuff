@@ -56,21 +56,26 @@ def pdf_scraper(pdf_url_fragment, casetext_dict):
 
     r = requests.get(root_pdf_url+pdf_url_fragment)
     f = io.BytesIO(r.content)
-
     case = pdfplumber.open(f)
-    test_page = case.pages[4]
-    print(test_page.width, test_page.height, '\n')
-    if len(test_page.lines) > 0:
-        line_dict = test_page.lines[0]
-        height_from_bottom = line_dict['y1']
-        cropped = test_page.crop((0, 120, test_page.width, test_page.height - height_from_bottom), relative=True )
-        print(line_dict)
-        print(cropped.extract_text())
-    else:
-        cropped = test_page.crop((0, 120, test_page.width, test_page.height - 120), relative=True)
-        print(cropped.extract_text())
-        print("UNCROPPED - NO CITATIONS")
-    
+    total_pages = len(case.pages)
+
+    i = 3
+    current_page = case.pages[i]
+
+    for i in range(3, 7):
+        current_page = case.pages[i]
+        if len(current_page.lines) > 0:
+            line_dict = current_page.lines[0]
+            height_from_bottom = line_dict['y1']
+            cropped = current_page.crop((0, 120, current_page.width, current_page.height - height_from_bottom), relative=True )
+            print(cropped.extract_text())
+            print("CROPPED \n")
+        else:
+            cropped = current_page.crop((0, 120, current_page.width, current_page.height - 120), relative=True)
+            print(cropped.extract_text())
+            print("UNCROPPED \n")
+
+    print('\n\n')
 
     #Unresolved sentence issues
     #(1) Judgment numbers (2) ". [emphasis in original]" (3) O. 18 r. 7 (wrong??)
