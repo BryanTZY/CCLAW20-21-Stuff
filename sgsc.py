@@ -59,36 +59,39 @@ def pdf_scraper(pdf_url_fragment, casetext_dict):
     case = pdfplumber.open(f)
     total_pages = len(case.pages)
 
-    i = 3
-    current_page = case.pages[i]
+    judgment_text = []
+    judgment_starts = False
 
-    for i in range(3, 7):
+    #Following method works for post-2016 judgments only.
+    for i in range(0, 5):
         current_page = case.pages[i]
-        if len(current_page.lines) > 0:
-            line_dict = current_page.lines[0]
-            height_from_bottom = line_dict['y1']
+        text = ''
+        if len(current_page.lines) > 0 and current_page.lines[0]['y1'] < current_page.width/2:
+            height_from_bottom = current_page.lines[0]['y1']
             cropped = current_page.crop((0, 120, current_page.width, current_page.height - height_from_bottom), relative=True )
-            print(cropped.extract_text())
-            print("CROPPED \n")
+            text = cropped.extract_text()
+            # print("FOOTNOTED \n")
         else:
             cropped = current_page.crop((0, 120, current_page.width, current_page.height - 120), relative=True)
-            print(cropped.extract_text())
-            print("UNCROPPED \n")
+            text = cropped.extract_text()
+            # print("NO FOOTNOTES \n")
+        # text = re.sub(r'(?<=[)JRA]):', '===', text)
+        print(text)
+        index = re.search(r'(?<=[)JRAC]):', text, flags=0)
+        print(index)
+        print('\n')
 
-    print('\n\n')
+    print('\n')
 
-    #Unresolved sentence issues
-    #(1) Judgment numbers (2) ". [emphasis in original]" (3) O. 18 r. 7 (wrong??)
-   
+   #Possible issue - some judges use O. xx r. xx in quoting ROC
+
     # print(contents, '\n')
     # contents1 = contents.split('\n')
     # for i in contents1:
     #     print("**"+ i + "**")
-    #     print()
 
     # contents2 = re.split(r'(?<=\w\.)\s', contents)
    
-
     return
 
 
