@@ -5,7 +5,7 @@ import requests
 import spacy
 import string
 import random #for testing purposes
-#note:
+#FOR PRACTICE PUPRPOSES ONLY. 
 #on wsl, to run - "python3 xxxxx.py" --> must be python3!
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
