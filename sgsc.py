@@ -59,8 +59,7 @@ def pdf_scraper(pdf_url_fragment, casetext_dict):
     case = pdfplumber.open(f)
     total_pages = len(case.pages)
 
-    judgment_text = []
-    judgment_starts = False
+    judgment_text = ''
 
     #Following method works for post-2016 judgments only.
     for i in range(0, 5):
@@ -75,13 +74,10 @@ def pdf_scraper(pdf_url_fragment, casetext_dict):
             cropped = current_page.crop((0, 120, current_page.width, current_page.height - 120), relative=True)
             text = cropped.extract_text()
             # print("NO FOOTNOTES \n")
-        # text = re.sub(r'(?<=[)JRA]):', '===', text)
-        print(text)
-        index = re.search(r'(?<=[)JRAC]):', text, flags=0)
-        print(index)
-        print('\n')
-
-    print('\n')
+        judgment_text += text
+        
+    index = re.search(r'(?<=[)JRAC]):', judgment_text).start()
+    print(judgment_text[index:]) #Print the judgment starting at the colon after the name of the judge delivering judgment
 
    #Possible issue - some judges use O. xx r. xx in quoting ROC
 
@@ -117,35 +113,6 @@ def scrape_numbered_page(pageno, case_dict): #sub-function to scrape a page of j
     # for k, v in case_dict.items():
     #     print(k, v, '\n')
     print("Page", pageno, "done...")
-    return
-
-def sup_court_pinpoint_scraper():
-
-    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/page/"
-    root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
-    case_dict = dict()
-
-    url = root_url + '23'
-    results = requests.get(url, headers=headers)
-    soup = BeautifulSoup(results.text, "html5lib")
-    
-    boxes = soup.find_all('div', class_="judgmentpage")
-    total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
-    print(total_cases)
-    case_count = 0
-    
-    for i in boxes:
-        text = i.find('div', class_="text").find_all(text=True, recursive=False)
-        caseref = i.find('ul', class_="decision").find('li').get_text() #neutral citation
-        casename = re.sub('[\t\n]', '', text[1]).strip(' ') + ' ' + caseref
-        pdf_link = i.find('div', class_="download")
-        case_dict[casename] = pdf_link.a['href']
-        case_count += 1
-
-    for k, v in case_dict.items():
-        print(k, v, '\n')
-    page_count = math.ceil(total_cases/case_count) #FYI
-
     return
 
 sup_court_scraper()
