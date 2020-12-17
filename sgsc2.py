@@ -53,10 +53,10 @@ def scrape_numbered_page(year, pageno, file_dir): #scrape a page of judgments fr
     soup = BeautifulSoup(results.text, "html5lib")
     page_case_dict = dict()
     
-    judgment_divs = soup.find_all('div', class_="judgmentpage")
+    judgment_divs = soup.find_all('div', class_="judgmentpage") 
     
     for i in judgment_divs:
-        text = i.find('div', class_="text").find_all(text=True, recursive=False)
+        text = i.find('div', class_="text").find_all(text=True, recursive=False) #recursive=False so that bs4 does not search the divs nested within the judgment div
         caseref = i.find('ul', class_="decision").find('li').get_text() #neutral citation
         casename = re.sub('[\t\n\./]', '', text[1]).strip(' ') + ' ' + caseref
         pdf_link = i.find('a', class_ = "pdf-download")['href']
