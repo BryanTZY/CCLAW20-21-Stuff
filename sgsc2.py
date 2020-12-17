@@ -27,8 +27,7 @@ def scrape_by_years(file_dir, start_year, end_year):
 
         #To find total number of cases, and cases per page, then divide to get total pages for this particular year
         total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
-        judgment_divs = soup.find_all('div', class_="judgmentpage")
-        case_count = len(judgment_divs)
+        case_count = len(soup.find_all('div', class_="judgmentpage"))
         
         # page_count = math.ceil(total_cases/case_count) #actual code line. Should download all cases in the year
         page_count = 3 #for testing purposes
