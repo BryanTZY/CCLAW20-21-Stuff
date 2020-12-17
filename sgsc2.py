@@ -29,7 +29,7 @@ def scrape_by_years(file_dir, start_year, end_year):
         judgment_divs = soup.find_all('div', class_="judgmentpage")
         case_count = len(judgment_divs)
         
-        # page_count = math.ceil(total_cases/case_count) #actual code line
+        # page_count = math.ceil(total_cases/case_count) #actual code line. Should download all cases in the year
         page_count = 3 #for testing purposes
 
         for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
@@ -65,9 +65,12 @@ def scrape_numbered_page(year, pageno, file_dir): #sub-function to scrape a page
     for k, v in page_case_dict.items():
         print("Now downloading", k, v, ' ...\n')
         pdf_url = root_pdf_url + v
-        urllib.request.urlretrieve(pdf_url, file_dir + k + '.pdf')
+        urllib.request.urlretrieve(pdf_url, file_dir + k + '.pdf') #If testing downloading of entire year (line 33), comment out this line.
 
     print("**Page", pageno, "done...**\n")
     return
 
-scrape_by_years('/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/', 2016, 2016) #put your file save directory here
+file_dir = '/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/' #put your file save directory here
+start_year = 2016
+end_year = 2016
+scrape_by_years(file_dir, start_year, end_year) 
