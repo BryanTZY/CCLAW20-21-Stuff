@@ -9,6 +9,7 @@ import math
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+case_dict = dict()
 
 def scrape_by_years(file_dir, start_year, end_year):
 
@@ -17,7 +18,6 @@ def scrape_by_years(file_dir, start_year, end_year):
         return
 
     root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/"
-    case_dict = dict()
     
     for year in range(start_year, end_year + 1):
         url = root_url + str(year) + '/page/1'
@@ -29,11 +29,11 @@ def scrape_by_years(file_dir, start_year, end_year):
         judgment_divs = soup.find_all('div', class_="judgmentpage")
         case_count = len(judgment_divs)
         
-        # page_count = math.ceil(total_cases/case_count)
+        # page_count = math.ceil(total_cases/case_count) #actual code line
         page_count = 3 #for testing purposes
 
         for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
-            scrape_numbered_page(year, i, case_dict, file_dir)
+            scrape_numbered_page(year, i, file_dir)
     casenames = [k for k, v in case_dict.items()]
 
     print("Total cases downloaded:", len(case_dict), '\n')
@@ -42,7 +42,7 @@ def scrape_by_years(file_dir, start_year, end_year):
         print(case)
     return
 
-def scrape_numbered_page(year, pageno, case_dict, file_dir): #sub-function to scrape a page of judgments from a given year
+def scrape_numbered_page(year, pageno, file_dir): #sub-function to scrape a page of judgments from a given year
 
     root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/" + str(year) + "/page/"
     root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
@@ -71,5 +71,3 @@ def scrape_numbered_page(year, pageno, case_dict, file_dir): #sub-function to sc
     return
 
 scrape_by_years('/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/', 2016, 2016) #put your file save directory here
-
-
