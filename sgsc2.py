@@ -1,9 +1,10 @@
 from bs4 import BeautifulSoup
-import re
+from datetime import datetime
 import sys
 import requests 
 import urllib.request
 import math
+import re
 
 #Command-line code purely for scraping of supcourt judgments 
 
@@ -12,9 +13,9 @@ headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Geck
 case_dict = dict()
 
 def scrape_by_years(file_dir, start_year, end_year):
-
-    if start_year > end_year or end_year > 2020:
-        print("You have entered the wrong year")
+    
+    if start_year > end_year or end_year > datetime.now().year: #temporary, should be removed after we code in years as args, and catch invalid args passed
+        print("You have entered invalid year(s).")
         return
 
     root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/"
@@ -42,7 +43,7 @@ def scrape_by_years(file_dir, start_year, end_year):
         print(case)
     return
 
-def scrape_numbered_page(year, pageno, file_dir): #sub-function to scrape a page of judgments from a given year
+def scrape_numbered_page(year, pageno, file_dir): #scrape a page of judgments from a given year
 
     root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/" + str(year) + "/page/"
     root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
@@ -73,4 +74,4 @@ def scrape_numbered_page(year, pageno, file_dir): #sub-function to scrape a page
 file_dir = '/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/' #put your file save directory here
 start_year = 2016
 end_year = 2016
-scrape_by_years(file_dir, start_year, end_year) 
+scrape_by_years(file_dir, start_year, end_year)
