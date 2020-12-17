@@ -4,28 +4,23 @@ import sys
 import requests 
 import urllib.request
 import math
-import random
-import wget
 
 #Command-line code purely for scraping of supcourt judgments - no pdf parsing
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
 
-def sup_court_scraper(file_dir, start_year, end_year):
+def sup_court_scraper(file_dir, start_year, end_year): #ignore for now
 
     root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/page/"
-    pdf_root_url = "https://www.supremecourt.gov.sg"
     case_dict = dict()
 
     url = root_url + str(random.randint(1, 200)) #random page for testing purposes
     results = requests.get(url, headers=headers)
     soup = BeautifulSoup(results.text, "html5lib")
     
-    #We find all divs ('boxes'), each div contains 1 judgment (case name, case citation, pdf object etc.)
     total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
     case_count = 0
-    
 
     # page_count = math.ceil(total_cases/case_count)
     page_count = 2 #for testing purposes
@@ -36,39 +31,71 @@ def sup_court_scraper(file_dir, start_year, end_year):
     print("Now printing full case dictionary...")
     for k, v in case_dict.items():
         print(k + ",", v,)
-    print()
+    print("Total cases downloaded:", len(case_dict), '\n')
 
     casenames = [k for k, v in case_dict.items()]
     
     return
 
-def scrape_numbered_page(pageno, case_dict, file_dir): #sub-function to scrape a page of judgments, given page number
+def sup_court_years_scraper(file_dir, start_year, end_year):
 
-    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/page/"
+    if start_year > end_year or end_year > 2020:
+        print("You have entered the wrong year")
+        return
+    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/"
+    case_dict = dict()
+    
+    for year in range(start_year, end_year + 1):
+        print(year)
+        url = root_url + str(year) + '/page/1'
+        results = requests.get(url, headers=headers)
+        # soup = BeautifulSoup(results.text, "html5lib")
+
+        # #To find total number of cases, and cases per page, then divide to get total pages for this particular year
+        # total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
+        # judgment_divs = soup.find_all('div', class_="judgmentpage")
+        # case_count = len(judgment_divs)
+        # page_count = math.ceil(total_cases/case_count)
+        page_count = 3 #for testing purposes
+
+        for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
+            scrape_numbered_page(year, i, case_dict, file_dir)
+    casenames = [k for k, v in case_dict.items()]
+
+    print("Total cases downloaded:", len(case_dict), '\n')
+    print("Cases downloaded:")
+    for case in casenames:
+        print(case)
+    return
+
+def scrape_numbered_page(year, pageno, case_dict, file_dir): #sub-function to scrape a page of judgments from a given year
+
+    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/" + str(year) + "/page/"
     root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
 
-    url = root_url + str(pageno)
-    results = requests.get(url, headers=headers)
+    curr_url = root_url + str(pageno)
+    print(curr_url)
+    results = requests.get(curr_url, headers=headers)
     soup = BeautifulSoup(results.text, "html5lib")
     page_case_dict = dict()
     
-    boxes = soup.find_all('div', class_="judgmentpage")
-
+    judgment_divs = soup.find_all('div', class_="judgmentpage")
     
-    for i in boxes:
+    for i in judgment_divs:
         text = i.find('div', class_="text").find_all(text=True, recursive=False)
         caseref = i.find('ul', class_="decision").find('li').get_text() #neutral citation
         casename = re.sub('[\t\n]', '', text[1]).strip(' ') + ' ' + caseref
         pdf_link = i.find('a', class_ = "pdf-download")
         case_dict[casename] = pdf_link['href'] # Keep a global copy of all case names and urls for reference purposes
         page_case_dict[casename] = pdf_link['href'] #Use this for downloading all PDFs on one page
+        print(casename)
 
     for k, v in page_case_dict.items():
         print("Now downloading", k, v, ' ...\n')
         pdf_url = root_pdf_url + v
         urllib.request.urlretrieve(pdf_url, file_dir + k + '.pdf')
 
-    print("**Page", pageno, "done...**")
+    print("**Page", pageno, "done...**\n")
     return
 
-sup_court_scraper('/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/', 2020, 2020) #put your file save directory here
+sup_court_years_scraper('/mnt/c/Users/bryantan/Documents/School Stuff/SMU/Com Science/CCLAW20-21 Stuff/test/', 2016, 2016) #put your file save directory here
