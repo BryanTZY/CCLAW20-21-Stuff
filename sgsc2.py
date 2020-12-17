@@ -29,7 +29,7 @@ def scrape_by_years(file_dir, start_year, end_year):
         total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
         case_count = len(soup.find_all('div', class_="judgmentpage"))
         
-        # page_count = math.ceil(total_cases/case_count) #actual code line. Should download all cases in the year
+        # page_count = math.ceil(total_cases/case_count) #actual code line. Downloads all cases in the year
         page_count = 3 #for testing purposes
 
         for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
