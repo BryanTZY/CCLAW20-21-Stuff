@@ -20,7 +20,6 @@ def scrape_by_years(file_dir, start_year, end_year):
     case_dict = dict()
     
     for year in range(start_year, end_year + 1):
-        print(year)
         url = root_url + str(year) + '/page/1'
         results = requests.get(url, headers=headers)
         soup = BeautifulSoup(results.text, "html5lib")
@@ -49,7 +48,6 @@ def scrape_numbered_page(year, pageno, case_dict, file_dir): #sub-function to sc
     root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
 
     curr_url = root_url + str(pageno)
-    print(curr_url)
     results = requests.get(curr_url, headers=headers)
     soup = BeautifulSoup(results.text, "html5lib")
     page_case_dict = dict()
@@ -60,10 +58,9 @@ def scrape_numbered_page(year, pageno, case_dict, file_dir): #sub-function to sc
         text = i.find('div', class_="text").find_all(text=True, recursive=False)
         caseref = i.find('ul', class_="decision").find('li').get_text() #neutral citation
         casename = re.sub('[\t\n\./]', '', text[1]).strip(' ') + ' ' + caseref
-        pdf_link = i.find('a', class_ = "pdf-download")
-        case_dict[casename] = pdf_link['href'] # Keep a global copy of all case names and urls for reference purposes
-        page_case_dict[casename] = pdf_link['href'] #Use this for downloading all PDFs on one page
-        print(casename)
+        pdf_link = i.find('a', class_ = "pdf-download")['href']
+        case_dict[casename] = pdf_link # Keep a global copy of all case names and urls for reference purposes
+        page_case_dict[casename] = pdf_link #Use this for downloading all PDFs on one page
 
     for k, v in page_case_dict.items():
         print("Now downloading", k, v, ' ...\n')
