@@ -1,11 +1,11 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
 import sys
+import os
 import requests 
 import urllib.request
 import math
 import re
-import os
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -84,7 +84,7 @@ def scrape_numbered_page(year, pageno): #scrape a page of judgments from a given
 def parse_args(args): 
     #Based on args passed in by user, 
     # (1) determine if user wants single-year or multi-year download;
-    # (2) catch invalid arguments (e.g. start_year > end_year)
+    # (2) catch invalid arguments (e.g. start_year > end_year);
     # (3) pass in the appropriate arguments to scrape_by_years.
     start_year = 0
     end_year = 0
