@@ -104,9 +104,8 @@ def parse_args(args):
     elif len(args) == 2:
         #If user inputs only one year arg, implies user only wants to download from that year.
         #Pass in the same start and end year to download cases from just that year.
-        end_year = start_year
         print("Now scraping cases from", start_year, "only...")
-        scrape_by_years(start_year, end_year) 
+        scrape_by_years(start_year, start_year) 
     else:
         print("You have entered too many arguments.")
         return
