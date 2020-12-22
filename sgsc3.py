@@ -28,8 +28,8 @@ def scrape_by_years(file_dir, start_year, end_year):
         total_cases = int(soup.find('div', class_="amount").get_text().strip(' \t\n')[:4])
         case_count = len(soup.find_all('div', class_="judgmentpage"))
         
-        # page_count = math.ceil(total_cases/case_count) #actual code line. Downloads all cases in the year
-        page_count = 3 #for testing purposes
+        page_count = math.ceil(total_cases/case_count) #actual code line. Downloads all cases in the year
+        # page_count = 3 #for testing purposes
 
         for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
             scrape_numbered_page(year, i, file_dir)
@@ -59,7 +59,7 @@ def scrape_numbered_page(year, pageno, file_dir): #scrape a page of judgments fr
         case_list.append(casename) # Keep a global copy of all case names for reference purposes
         print("Now downloading", casename, ' ...\n')
         pdf_url = root_pdf_url + pdf_link
-        # urllib.request.urlretrieve(pdf_url, file_dir + '/' + casename + '.pdf')
+        urllib.request.urlretrieve(pdf_url, file_dir + '/' + casename + '.pdf')
 
     print("**Page", pageno, "done...**\n")
     return
