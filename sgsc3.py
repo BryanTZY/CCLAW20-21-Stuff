@@ -11,15 +11,16 @@ from typing import List, Any
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
-case_dict = dict()
+case_list = []
+root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/"
 opts = [opt for opt in sys.argv[1:] if opt.startswith("--")]
 
 def scrape_by_years(file_dir, start_year, end_year):
 
-    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/"
+    year_url = root_url + "year/"
     
     for year in range(start_year, end_year + 1):
-        url = root_url + str(year) + '/page/1'
+        url = year_url + str(year) + '/page/1'
         results = requests.get(url, headers=headers)
         soup = BeautifulSoup(results.text, "html5lib")
 
@@ -32,23 +33,21 @@ def scrape_by_years(file_dir, start_year, end_year):
 
         for i in range(1, page_count + 1): #Supcourt page numbering starts at 1
             scrape_numbered_page(year, i, file_dir)
-    casenames = [k for k, v in case_dict.items()]
 
-    print("Total cases downloaded:", len(case_dict), '\n')
+    print("Total cases downloaded:", len(case_list), '\n')
     print("Cases downloaded:")
-    for case in casenames:
+    for case in case_list:
         print(case)
     return
 
 def scrape_numbered_page(year, pageno, file_dir): #scrape a page of judgments from a given year
 
-    root_url = "https://www.supremecourt.gov.sg/news/supreme-court-judgments/year/" + str(year) + "/page/"
+    page_url = root_url + "year/" + str(year) + "/page/"
     root_pdf_url = "https://www.supremecourt.gov.sg" #use later to construct the judgment pdf link
 
-    curr_url = root_url + str(pageno)
+    curr_url = page_url + str(pageno)
     results = requests.get(curr_url, headers=headers)
     soup = BeautifulSoup(results.text, "html5lib")
-    page_case_dict = dict()
     
     judgment_divs = soup.find_all('div', class_="judgmentpage") 
     
@@ -57,18 +56,13 @@ def scrape_numbered_page(year, pageno, file_dir): #scrape a page of judgments fr
         caseref = i.find('ul', class_="decision").find('li').get_text() #neutral citation
         casename = re.sub('[\t\n\./]', '', text[1]).strip(' ') + ' ' + caseref
         pdf_link = i.find('a', class_ = "pdf-download")['href']
-        case_dict[casename] = pdf_link # Keep a global copy of all case names and urls for reference purposes
-        page_case_dict[casename] = pdf_link #Use this for downloading all PDFs on one page
-
-    for k, v in page_case_dict.items():
-        print("Now downloading", k, v, ' ...\n')
-        pdf_url = root_pdf_url + v
-        urllib.request.urlretrieve(pdf_url, file_dir + '/' + k + '.pdf') #If testing downloading of entire year (line 33), comment out this line.
+        case_list.append(casename) # Keep a global copy of all case names for reference purposes
+        print("Now downloading", casename, ' ...\n')
+        pdf_url = root_pdf_url + pdf_link
+        # urllib.request.urlretrieve(pdf_url, file_dir + '/' + casename + '.pdf')
 
     print("**Page", pageno, "done...**\n")
     return
-
-#command-line
 
 #display input format: python3 file_dir/xxxx.py 2016 2020 (--dir '/relative/dir')
 USAGE = f"Usage: python {sys.argv[0]} [--help] | -- startyear endyear]" 
@@ -79,30 +73,31 @@ class Arguments:
     end_year: int = 0
         
 def validate(args: List[str]):
-    
-    start_year= int(args[0])
-    current_year: int = datetime.datetime.now().year
-    
-    if len(args)>1 and args[1].isdigit():  #if optional 2nd argument passed in
-        end_year=int(args[1])
-
     #check valid number of arguments 
     try:
         arguments = Arguments(args)
     except TypeError:
         raise SystemExit(USAGE)
- 
-    #check year args are valid
-    if (start_year > current_year) or (len(args) > 1 and end_year > current_year):
-        print("Year cannot exceed", current_year)
-        raise SystemExit()
-    
-    if len(args) > 1 and start_year > end_year:
 
-        print("End year cannot be greater than start year.")
-        raise SystemExit()
+    start_year= int(args[0])
+    current_year: int = datetime.datetime.now().year
+
+    #if optional 2nd argument passed in
+    if len(args)>1 and args[1].isdigit():
+        end_year=int(args[1])
+        if end_year > current_year:
+            print("Year cannot exceed", current_year)
+            raise SystemExit()
+        elif start_year > end_year:
+            print("End year cannot be greater than start year.")
+            raise SystemExit()
     else:
         end_year = start_year
+
+    #check for invalid year args
+    if start_year > current_year:
+        print("Year cannot exceed", current_year)
+        raise SystemExit()        
     
     return start_year, end_year
 
@@ -112,6 +107,7 @@ def get_dir(args):
     if "--dir" in opts:
         file_dir += args[-1]
 
+    #check if given directory exists
     if os.path.isdir(file_dir):
         print("Chosen file directory:", file_dir)
         return file_dir
