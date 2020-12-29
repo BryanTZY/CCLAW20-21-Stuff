@@ -10,6 +10,7 @@ root_url = "http://vbpl.vn"
 args = [arg for arg in sys.argv[1:] if not arg.startswith("--")] #should be max only 1 arg, relative_dir
 opts = [opt for opt in sys.argv[1:] if opt.startswith("--")]
 
+#Remaining issue: documents with duplicate /'unnamed' name, overriding each other.
 def get_dir(args):
     file_dir = os.getcwd()
     if "--dir" in opts:
@@ -23,20 +24,19 @@ def get_dir(args):
         print("You have entered an invalid directory. Please try again.")
         raise SystemExit()
 
-def make_dirs(parallel_dir, viet_dir):
-    if not os.path.exists(parallel_dir):
-        os.mkdir(parallel_dir)
-    if not os.path.exists(viet_dir):
-        os.mkdir(viet_dir)
+def make_dirs(dir_list):
+    for i in dir_list:
+        if not os.path.exists(i):
+            os.mkdir(i)
     return
 
 file_dir = get_dir(args)
 parallel_dir = file_dir + '/Parallel'
 viet_dir = file_dir + '/Vietnamese_Only'
-make_dirs(parallel_dir, viet_dir)
+make_dirs([parallel_dir, viet_dir])
 par_eng_count, par_viet_count, only_viet_count =  0, 0, 0
 
-def homepage():
+def start_scraping():
 
     home_url = "http://vbpl.vn/TW/Pages/Home.aspx" #language: Vietnamese
     homepage = requests.get(home_url, headers=headers)
@@ -44,19 +44,23 @@ def homepage():
 
     #retrieve hrefs of each type of legislation
     category_ul = soup.find('ul', class_="category", id="loaiVB")
-    category = category_ul.find_all('li')
+    categories = category_ul.find_all('li')
     category_links = []
 
-    for i in category:
-        link = i.find('a')['href'] #relative link
-        category_links.append(link)
+    for i in categories:
+        category_element = i.find('a')
+        category_name = re.sub('[\t\n]', '', category_element.get_text()).strip(' ')
+        link = category_element['href'] #relative link
+        category_links.append((category_name, link))
     
-    # for i in category_links:
-    #     scrape_by_category(i)
+    # for k, v in category_links:
+        # print("Now scraping documents under the category '", v[0], "'...")  
+        # scrape_by_category(v[1])
 
-    scrape_by_category(category_links[1])
+    print("Now scraping legal documents of type '" +  category_links[6][0] + "'...")
+    scrape_by_category(category_links[6][1]) #for testing
 
-    print("Total parallel Viet and English documents downloaded:", par_viet_count, ",", par_eng_count)
+    print("Total parallel Vietnamese and English documents downloaded:", str(par_viet_count) + ",", par_eng_count)
     print("Total Vietnamese-only documents downloaded:", only_viet_count)
 
     return
@@ -66,18 +70,14 @@ def scrape_by_category(page_url_fragment):
     category_url = root_url + page_url_fragment
     category_page = requests.get(category_url, headers=headers)
     category_soup = BeautifulSoup(category_page.text, "html5lib")
-
-    count_element = category_soup.find('a', class_="selected")
-    doc_count = int(count_element.find('b').get_text())
-
-    #seems to be 10 documents displayed per page 
-    page_count = math.ceil(doc_count / 10)
-    print(page_count)
+    doc_count = int(category_soup.find('a', class_="selected").find('b').get_text())
+    page_count = math.ceil(doc_count / 10) #seems to be 10 documents displayed per page 
+    print("Total documents:", doc_count, "; total pages:", page_count)
 
     # for page_no in range(1, page_count + 1):
     #     scrape_page(category_url, page_no)
 
-    scrape_page(category_url, 1)
+    scrape_page(category_url, 1) #for testing 
 
     return
 
@@ -112,14 +112,14 @@ def scrape_page(category_url, page_no):
             engdoc = requests.get(eng_url, headers=headers)
             engsoup = BeautifulSoup(engdoc.text, "html5lib")
             eng_link = engsoup.find('b', class_= "print").parent.parent['href']
-            print("Downloading both the Viet and English documents for ", doc_name, "...")
+            print("Downloading both the Viet and English documents for", doc_name, "...")
             savePage(root_url + viet_link, doc_name, 'V') #download the parallel Viet
             savePage(root_url + eng_link, doc_name, 'E') #download the parallel English
             par_viet_count += 1
             par_eng_count += 1
         #if no English translation, then just download the Vietnamese document
         except:
-            print("Downloading only the Vietnamese document for ", doc_name, "...")
+            print("Downloading only the Vietnamese document for", doc_name, "...")
             savePage(root_url + viet_link, doc_name) #no eng translation, use default mode
             only_viet_count += 1
     
@@ -159,11 +159,11 @@ def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_o
         save_dir = viet_dir + '/' + pagefilename + '.vn' #save to vietnamese-only folder, with .vn extension
     pagefolder = save_dir +' files' # page contents
 
-    soup = soupfindnSave(pagefolder, 'img', 'src')
+    # soup = soupfindnSave(pagefolder, 'img', 'src') #No images observed so far. But if there are, then uncomment back this line.
     soup = soupfindnSave(pagefolder, 'link', 'href')
     soup = soupfindnSave(pagefolder, 'script', 'src')
     with open(save_dir + '.html', 'wb') as file:
         file.write(soup.prettify('utf-8')) #this should standardise to utf-8 as required
     return soup
 
-homepage()
+start_scraping()
