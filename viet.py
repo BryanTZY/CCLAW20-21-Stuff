@@ -1,14 +1,40 @@
 from bs4 import BeautifulSoup
 import requests 
 import urllib.request
-import math
-import re
-import os, sys
 from urllib.parse import urljoin, urlparse 
+import os, sys, re, math
 
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
 root_url = "http://vbpl.vn"
+args = [arg for arg in sys.argv[1:] if not arg.startswith("--")] #should be max only 1 arg, relative_dir
+opts = [opt for opt in sys.argv[1:] if opt.startswith("--")]
+
+def get_dir(args):
+    file_dir = os.getcwd()
+    if "--dir" in opts:
+        file_dir += args[0]
+
+    #check if given directory exists
+    if os.path.isdir(file_dir):
+        print("Chosen file directory:", file_dir)
+        return file_dir
+    else:
+        print("You have entered an invalid directory. Please try again.")
+        raise SystemExit()
+
+def make_dirs(parallel_dir, viet_dir):
+    if not os.path.exists(parallel_dir):
+        os.mkdir(parallel_dir)
+    if not os.path.exists(viet_dir):
+        os.mkdir(viet_dir)
+    return
+
+file_dir = get_dir(args)
+parallel_dir = file_dir + '/Parallel'
+viet_dir = file_dir + '/Vietnamese_Only'
+make_dirs(parallel_dir, viet_dir)
+par_eng_count, par_viet_count, only_viet_count =  0, 0, 0
 
 def homepage():
 
@@ -24,12 +50,14 @@ def homepage():
     for i in category:
         link = i.find('a')['href'] #relative link
         category_links.append(link)
-        # print(link)
     
     # for i in category_links:
     #     scrape_by_category(i)
 
-    scrape_by_category(category_links[5])
+    scrape_by_category(category_links[1])
+
+    print("Total parallel viet and english documents downloaded:", par_viet_count, ",", par_eng_count)
+    print("Total vietnamese-only documents downloaded:", only_viet_count)
 
     return
     
@@ -54,6 +82,10 @@ def scrape_by_category(page_url_fragment):
     return
 
 def scrape_page(category_url, page_no):
+    global par_viet_count #in order to change external variables within fn, necessary to refer to them as global first.
+    global par_eng_count
+    global only_viet_count
+
     page_url = category_url + "&Page=" + str(page_no)
     page = requests.get(page_url)
     soup = BeautifulSoup(page.text, "html5lib")
@@ -61,41 +93,46 @@ def scrape_page(category_url, page_no):
 
     #iterate through each document box and search for the link to Vietnamese and English (if any)
     for box in boxes:
-        title = box.find(class_="title").a
-        doc_name = re.sub('[\t\n]', '', title.get_text()).strip(' ')
+        if box.find(class_="source") is not None:
+            continue
+        title_element = box.find(class_="title").a
+        doc_name = re.sub('[\t\n]', '', title_element.get_text()).strip(' ')
         doc_name = re.sub('/', '.', doc_name)
         print(doc_name)
-        viet_link = title['href']
-        link_list = [viet_link]
-        doc_url = root_url + viet_link
+        doc_url = root_url + title_element['href']
         doc = requests.get(doc_url, headers=headers)
         docsoup = BeautifulSoup(doc.text, "html5lib")
-        print_link = docsoup.find('div', class_="box-tab-vb").find('a', class_="clsatoanvan")['href']
-        savePage(root_url + print_link, doc_name)
-
-        eng_element = box.find('li', class_="en")
-        eng_link = ''
+        viet_link = docsoup.find('a', class_="clsatoanvan")['href']
+        
+        #see if there is a parallel English translation
         eng_bool = False
+        eng_link = ''
+        eng_element = box.find('li', class_="en")
         if eng_element is not None:
-            eng_bool = True
-            eng_link = eng_element.a['href']
-            link_list.append(eng_link)
-        # print(link_list)
+            eng_url = root_url + eng_element.a['href']
+            engdoc = requests.get(eng_url, headers=headers)
+            engsoup = BeautifulSoup(engdoc.text, "html5lib")
+            try:
+                eng_link = engsoup.find('b', class_= "print").parent.parent['href']
+                eng_bool = True
+            except:
+                print("There was an error downloading the English parallel translation.")
+        #if there are parallel, download both. Otherwise, just the Vietnamese version
+        if eng_bool:
+            # print("Downloading both the Viet and English documents...")
+            savePage(root_url + viet_link, doc_name, 'V') #download the parallel Viet
+            savePage(root_url + eng_link, doc_name, 'E') #download the parallel English
+            par_viet_count += 1
+            par_eng_count += 1
+        else:
+            # print("Downloading only the Vietnamese document...")
+            savePage(root_url + viet_link, doc_name) #no eng translation, use default mode
+            only_viet_count += 1
 
-    # titles = soup.find('ul', class_="listLaw")(class_="title")
-    # for title in titles:
-    #     
-    #     
-    #     if 'anh' in first_tab.b.get_text(): #search for the English version tab
-    #         eng_url = first_tab.a['href']
-    #         print(eng_url)
-    #     else:
-    #         print("No english version found")
     print("Page", page_no, "complete\n")
         
-def savePage(url, pagefilename='page'):
+def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_only, V = parallel Viet, E = parallel Eng
     def soupfindnSave(pagefolder, tag2find='img', inner='src'):
-        """saves on specified `pagefolder` all tag2find objects"""
         if not os.path.exists(pagefolder): # create only once
             os.mkdir(pagefolder)
         for res in soup.findAll(tag2find):   # images, css, etc..
@@ -116,15 +153,23 @@ def savePage(url, pagefilename='page'):
         return soup
     
     session = requests.Session()
-    #... whatever other requests config you need here
     response = session.get(url)
     soup = BeautifulSoup(response.text, features="lxml")
-    pagefolder = pagefilename+'_files' # page contents
+
+    save_dir, page_folder = '', ''
+    if mode == 'V':
+        save_dir = parallel_dir + '/' + pagefilename + '.vn' #save to parallel folder, with .vn extension
+    elif mode == 'E':
+        save_dir = parallel_dir  + '/' + pagefilename + '.en' #save to parallel folder, with .en extension
+    else:
+        save_dir = viet_dir + '/' + pagefilename + '.vn' #save to vietnamese-only folder, with .vn extension
+    pagefolder = save_dir +' files' # page contents
+
     soup = soupfindnSave(pagefolder, 'img', 'src')
     soup = soupfindnSave(pagefolder, 'link', 'href')
     soup = soupfindnSave(pagefolder, 'script', 'src')
-    with open(pagefilename+'.html', 'wb') as file:
-        file.write(soup.prettify('utf-8'))
+    with open(save_dir + '.html', 'wb') as file:
+        file.write(soup.prettify('utf-8')) #this should standardise to utf-8 as required
     return soup
 
 
