@@ -56,8 +56,8 @@ def homepage():
 
     scrape_by_category(category_links[1])
 
-    print("Total parallel viet and english documents downloaded:", par_viet_count, ",", par_eng_count)
-    print("Total vietnamese-only documents downloaded:", only_viet_count)
+    print("Total parallel Viet and English documents downloaded:", par_viet_count, ",", par_eng_count)
+    print("Total Vietnamese-only documents downloaded:", only_viet_count)
 
     return
     
@@ -91,14 +91,13 @@ def scrape_page(category_url, page_no):
     soup = BeautifulSoup(page.text, "html5lib")
     boxes = soup.find('ul', class_="listLaw")(class_="item")
 
-    #iterate through each document box and search for the link to Vietnamese and English (if any)
+    #iterate through each document box, search for link to Vietnamese and English (if any), then download accordingly
     for box in boxes:
-        if box.find(class_="source") is not None:
+        if box.find(class_="source") is not None: #If there is a PDF button, skip this document.
             continue
         title_element = box.find(class_="title").a
         doc_name = re.sub('[\t\n]', '', title_element.get_text()).strip(' ')
         doc_name = re.sub('/', '.', doc_name)
-        print(doc_name)
         doc_url = root_url + title_element['href']
         doc = requests.get(doc_url, headers=headers)
         docsoup = BeautifulSoup(doc.text, "html5lib")
@@ -108,27 +107,22 @@ def scrape_page(category_url, page_no):
         eng_bool = False
         eng_link = ''
         eng_element = box.find('li', class_="en")
-        if eng_element is not None:
+        try:
             eng_url = root_url + eng_element.a['href']
             engdoc = requests.get(eng_url, headers=headers)
             engsoup = BeautifulSoup(engdoc.text, "html5lib")
-            try:
-                eng_link = engsoup.find('b', class_= "print").parent.parent['href']
-                eng_bool = True
-            except:
-                print("There was an error downloading the English parallel translation.")
-        #if there are parallel, download both. Otherwise, just the Vietnamese version
-        if eng_bool:
-            # print("Downloading both the Viet and English documents...")
+            eng_link = engsoup.find('b', class_= "print").parent.parent['href']
+            print("Downloading both the Viet and English documents for ", doc_name, "...")
             savePage(root_url + viet_link, doc_name, 'V') #download the parallel Viet
             savePage(root_url + eng_link, doc_name, 'E') #download the parallel English
             par_viet_count += 1
             par_eng_count += 1
-        else:
-            # print("Downloading only the Vietnamese document...")
+        #if no English translation, then just download the Vietnamese document
+        except:
+            print("Downloading only the Vietnamese document for ", doc_name, "...")
             savePage(root_url + viet_link, doc_name) #no eng translation, use default mode
             only_viet_count += 1
-
+    
     print("Page", page_no, "complete\n")
         
 def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_only, V = parallel Viet, E = parallel Eng
@@ -171,7 +165,5 @@ def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_o
     with open(save_dir + '.html', 'wb') as file:
         file.write(soup.prettify('utf-8')) #this should standardise to utf-8 as required
     return soup
-
-
 
 homepage()
