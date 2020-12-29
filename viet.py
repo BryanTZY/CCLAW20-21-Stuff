@@ -29,7 +29,7 @@ def homepage():
     # for i in category_links:
     #     scrape_by_category(i)
 
-    scrape_by_category(category_links[1])
+    scrape_by_category(category_links[5])
 
     return
     
@@ -46,10 +46,10 @@ def scrape_by_category(page_url_fragment):
     page_count = math.ceil(doc_count / 10)
     print(page_count)
 
-    # for page_no in range(1, page_count + 1):
-    #     scrape_page(category_url, page_no)
+    for page_no in range(1, page_count + 1):
+        scrape_page(category_url, page_no)
 
-    scrape_page(category_url, 1)
+    # scrape_page(category_url, 1)
 
     return
 
@@ -61,14 +61,20 @@ def scrape_page(category_url, page_no):
 
     #iterate through each document box and search for the link to Vietnamese and English (if any)
     for box in boxes:
-        doc_link = box.find(class_="title").a['href']
-        print(doc_link)
-        doc_url = root_url + doc_link
+        title = box.find(class_="title").a
+        text = title.get_text()
+        doc_name = re.sub('[\t\n]', '', text).strip(' ')
+        doc_name = re.sub('/', '.', doc_name)
+        print(doc_name)
+        viet_link = title['href']
+        link_list = [viet_link]
+        doc_url = root_url + viet_link
         eng_element = box.find('li', class_="en")
         eng_link = ''
         if eng_element is not None:
-            print("Link to English version found")
             eng_link = eng_element.a['href']
+            link_list.append(eng_link)
+        # print(link_list)
 
     # titles = soup.find('ul', class_="listLaw")(class_="title")
     # for title in titles:
@@ -83,6 +89,7 @@ def scrape_page(category_url, page_no):
     #         print(eng_url)
     #     else:
     #         print("No english version found")
+    print("Page", page_no, "complete\n")
         
 
 
