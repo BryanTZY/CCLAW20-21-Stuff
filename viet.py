@@ -103,9 +103,7 @@ def scrape_page(category_url, page_no):
         docsoup = BeautifulSoup(doc.text, "html5lib")
         viet_link = docsoup.find('a', class_="clsatoanvan")['href']
         
-        #see if there is a parallel English translation
-        eng_bool = False
-        eng_link = ''
+        #If there is a parallel English translation, download both
         eng_element = box.find('li', class_="en")
         try:
             eng_url = root_url + eng_element.a['href']
@@ -123,7 +121,7 @@ def scrape_page(category_url, page_no):
             savePage(root_url + viet_link, doc_name) #no eng translation, use default mode
             only_viet_count += 1
     
-    print("Page", page_no, "complete\n")
+    print("Page", page_no, "complete...\n")
         
 def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_only, V = parallel Viet, E = parallel Eng
     def soupfindnSave(pagefolder, tag2find='img', inner='src'):
