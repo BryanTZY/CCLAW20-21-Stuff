@@ -56,63 +56,7 @@ def scrape():
                 file.write(i.getText().strip()) 
 
 
-#command-line
 
-#display input format: python3 viet.py (--dir /relative/dir)
-USAGE = f"Usage: python {sys.argv[0]} [--help] | -- ]" 
-
-
-@dataclasses.dataclass
-class Arguments: 
-    start_year: int
-    end_year: int = 0
-
-def validate(args: List[str]):
-
-    start_year= int(args[0])
-    current_year: int = datetime.datetime.now().year
-
-    if len(args)>1 and args[1].isdigit():  #if optional 2nd argument passed in
-        end_year=int(args[1])
-
-    #check valid number of arguments 
-    try:
-        arguments = Arguments(args) 
-    except TypeError:
-        raise SystemExit(USAGE)
-
-    #check year args are valid
-    if start_year>current_year:
-        print("Year cannot exceed", current_year)
-        raise SystemExit()
-
-    if len(args) > 1:
-        if end_year>current_year:
-            print("Year cannot exceed", current_year)
-            raise SystemExit()
-
-        elif start_year>end_year:
-            print("End year cannot be greater than start year.")
-            raise SystemExit()
-    else:
-        end_year = start_year
-
-    return start_year, end_year
-
-
-def main() -> None:
-    args = sys.argv[1:]
-    if not args:
-        raise SystemExit(USAGE) 
-    if args[0] == "--help":
-        print(USAGE)
-    else:
-        start_year, end_year = validate(args)
-        scrape_by_years (sys.argv[0], start_year, end_year) #pass into scraper
-
-
-if __name__ == "__main__":
-    main()
 
 
         
@@ -120,9 +64,4 @@ if __name__ == "__main__":
 
 
     
-    
-    
-    
 
-#directory (make 3 folders)
-scrape()
