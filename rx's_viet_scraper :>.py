@@ -51,14 +51,13 @@ def scrape():
          
         if not os.path.exists(vn_file_dir): 
             os.makedirs(vn_file_dir)
-        with open (os.path.join(vn_file_dir,filename), 'w') as file:
+        with open (os.path.join(vn_file_dir,file_name), 'w') as file:
             for i in text:
                 file.write(i.getText().strip()) 
 
 
 
-
-
+scrape ()
         
 
 
