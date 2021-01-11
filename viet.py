@@ -36,7 +36,7 @@ viet_dir = file_dir + '/Vietnamese_Only'
 make_dirs([parallel_dir, viet_dir])
 par_eng_count, par_viet_count, only_viet_count =  0, 0, 0
 
-def start_scraping():
+def html_scrape():
 
     home_url = "http://vbpl.vn/TW/Pages/Home.aspx" #language: Vietnamese
     homepage = requests.get(home_url, headers=headers)
@@ -159,4 +159,55 @@ def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_o
         file.write(soup.prettify('utf-8')) #this should standardise to utf-8 as required
     return soup
 
-start_scraping()
+def text_scrape(): #also downloads cases by ascending ID order
+    viet_root_url = "http://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID="
+    id_range = 1000 #change 
+
+    for id_num in range(id_range, id_range + 50):
+        url = viet_root_url + str(id_num)
+        try: #not every id may be in use
+            page = requests.get(url)
+        except:
+            continue
+        soup = BeautifulSoup(page.text, 'html.parser')
+        text = soup.find_all("div", class_="toanvancontent")
+        
+        #get name of document
+        page_links = soup.find_all("div", class_="box-map")
+        for i in page_links:
+            file_name = (i.getText().strip().split('\n') [-1]).strip()
+        file_name= file_name.replace('/','.') + '.vn'
+        
+        #check for english version
+        try: #handle exception where there is no tab with class 'history'
+            tab_text = soup.find('b', class_ = 'history').getText()
+            if tab_text == 'VB tiếng anh': #have english version
+                vn_file_dir = parallel_dir
+                en_url = "http://vbpl.vn" + soup.find("div", class_="header").find('a').get('href')
+                en_page = requests.get(en_url)
+                soup = BeautifulSoup(en_page.text, 'html.parser') 
+            
+                en_text = soup.find_all("div", class_="fulltext")  #need to remove header?
+                links = soup.find_all("div", class_="box-map")
+                for i in links:
+                    filename = (i.getText().strip().split('\n') [-1]).strip()
+                filename= filename.replace('/','.') + '.en'
+                
+                with open (os.path.join(parallel_dir,filename), 'w') as f:
+                    for j in en_text:
+                        f.write(j.getText().strip())
+                    print("English downloaded")
+            else:
+                vn_file_dir = viet_dir
+        except:
+            vn_file_dir = viet_dir
+            
+        with open (os.path.join(vn_file_dir,file_name), 'w') as file:
+            for i in text:
+                file.write(i.getText().strip())
+            print("Viet downloaded") 
+
+if "--text" in opts:
+    text_scrape()
+else:
+    html_scrape() #default mode
