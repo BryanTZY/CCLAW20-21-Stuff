@@ -57,7 +57,7 @@ def start_scraping():
         # print("Now scraping documents under the category '", v[0], "'...")  
         # scrape_by_category(v[1])
 
-    print("Now scraping legal documents of type '" +  category_links[6][0] + "'...")
+    print("Now scraping legal documents of type '" +  category_links[6][0] + "'...") #for testing
     scrape_by_category(category_links[6][1]) #for testing
 
     print("Total parallel Vietnamese and English documents downloaded:", str(par_viet_count) + ",", par_eng_count)
@@ -148,13 +148,8 @@ def savePage(url, pagefilename='page', mode='D'): #mode default D = vietnamese_o
     response = session.get(url)
     soup = BeautifulSoup(response.text, features="lxml")
 
-    save_dir, page_folder = '', ''
-    if mode == 'V':
-        save_dir = parallel_dir + '/' + pagefilename + '.vn' #save to parallel folder, with .vn extension
-    elif mode == 'E':
-        save_dir = parallel_dir  + '/' + pagefilename + '.en' #save to parallel folder, with .en extension
-    else:
-        save_dir = viet_dir + '/' + pagefilename + '.vn' #save to vietnamese-only folder, with .vn extension
+    dir_dict = {'V': parallel_dir + '/' + pagefilename + '.vn', 'E': parallel_dir  + '/' + pagefilename + '.en', 'D': viet_dir + '/' + pagefilename + '.vn' }
+    save_dir = dir_dict[mode]
     pagefolder = save_dir +' files' # page contents
 
     # soup = soupfindnSave(pagefolder, 'img', 'src') #No images observed so far. But if there are, then uncomment back this line.
