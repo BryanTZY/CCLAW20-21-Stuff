@@ -7,8 +7,9 @@ import os, sys, re, math
 headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:62.0) Gecko/20100101 Firefox/62.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
 root_url = "http://vbpl.vn"
-args = [arg for arg in sys.argv[1:] if not arg.startswith("--")] #should be max only 1 arg, relative_dir
-opts = [opt for opt in sys.argv[1:] if opt.startswith("--")]
+args = [arg for arg in sys.argv[1:] if not arg.startswith("--")] #maximum 1 arg expected (relative directory)
+opts = [opt for opt in sys.argv[1:] if opt.startswith("--")] #maximum of 2 opts expected, --dir and --text
+#Usage: 
 
 #Remaining issue: documents with duplicate /'unnamed' name, overriding each other.
 def get_dir(args):
@@ -207,7 +208,11 @@ def text_scrape(): #also downloads cases by ascending ID order
                 file.write(i.getText().strip())
             print("Viet downloaded") 
 
-if "--text" in opts:
+USAGE = f"Usage: python3 {sys.argv[0]} [--help] | [--dir /relative/directory] [--text] (default mode: download html)" 
+
+if "--help" in opts:
+    print(USAGE)
+elif "--text" in opts:
     text_scrape()
 else:
     html_scrape() #default mode
